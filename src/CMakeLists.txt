@@ -45,8 +45,21 @@ SET(HEADER
     common/Exception.h
     common/XmlConfig.h)
 
-ADD_LIBRARY(libhdfs3-static STATIC ${libhdfs3_SOURCES} ${libhdfs3_PROTO_SOURCES} ${libhdfs3_PROTO_HEADERS})
-ADD_LIBRARY(libhdfs3-shared SHARED ${libhdfs3_SOURCES} ${libhdfs3_PROTO_SOURCES} ${libhdfs3_PROTO_HEADERS})
+# ASM
+if(CMAKE_SYSTEM_PROCESSOR MATCHES "amd64|x86_64")
+    find_program(YASM_PATH NAMES yasm)
+    if(NOT YASM_PATH)
+        message(FATAL_ERROR "Please install the Yasm assembler to build libhdfs3")
+    endif()
+    add_custom_command(
+        OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/crc_iscsi_v_pcl.o
+        COMMAND ${YASM_PATH} -f x64 -f elf64 -X gnu -g dwarf2 -D LINUX -o ${CMAKE_CURRENT_BINARY_DIR}/crc_iscsi_v_pcl.o ${libhdfs3_COMMON_SOURCES_DIR}/crc_iscsi_v_pcl.asm
+        COMMENT "Translating Intel CRC assembly to object code")
+    set(libhdfs3_ASM_OBJECTS ${CMAKE_CURRENT_BINARY_DIR}/crc_iscsi_v_pcl.o)
+endif()
+
+ADD_LIBRARY(libhdfs3-static STATIC ${libhdfs3_SOURCES} ${libhdfs3_PROTO_SOURCES} ${libhdfs3_PROTO_HEADERS} ${libhdfs3_ASM_OBJECTS})
+ADD_LIBRARY(libhdfs3-shared SHARED ${libhdfs3_SOURCES} ${libhdfs3_PROTO_SOURCES} ${libhdfs3_PROTO_HEADERS} ${libhdfs3_ASM_OBJECTS})
 
 ADD_CUSTOM_COMMAND(
     TARGET libhdfs3-shared libhdfs3-static
