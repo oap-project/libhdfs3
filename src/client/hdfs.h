@@ -737,6 +737,21 @@ BlockLocation * hdfsGetFileBlockLocations(hdfsFS fs, const char * path,
  */
 void hdfsFreeFileBlockLocations(BlockLocation * locations, int numOfBlock);
 
+/**
+ * Set the default username to use when connecting to the HDFS cluster.
+ *
+ * @param userName The user name.  The string will be shallow-copied.
+ */
+void hdfsSetDefautUserName(const char *userName);
+
+/**
+ * Set the token used to authenticate for default user
+ *
+ * @param token The token used to authenticate
+ * @return 0 on success; nonzero error code otherwise.
+ */
+int hdfsSetTokenForDefaultUser(const char *token);
+
 #ifdef __cplusplus
 }
 #endif

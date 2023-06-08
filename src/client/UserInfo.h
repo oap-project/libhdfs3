@@ -29,6 +29,7 @@
 #define _HDFS_LIBHDFS3_CLIENT_USERINFO_H_
 
 #include <map>
+#include <mutex>
 #include <string>
 
 #include "Hash.h"
@@ -39,6 +40,28 @@
 
 namespace Hdfs {
 namespace Internal {
+class AuthTokens {
+  public:
+    AuthTokens() {}
+    AuthTokens(const AuthTokens &other) { tokens = other.tokens; }
+    AuthTokens &operator=(const AuthTokens &other) {
+        tokens = other.tokens;
+        return *this;
+    }
+    AuthTokens(AuthTokens &&other) { tokens = std::move(other.tokens); }
+    AuthTokens &operator=(AuthTokens &&other) {
+        tokens = std::move(other.tokens);
+        return *this;
+    }
+
+    void addToken(const Token &token);
+    const Token *selectToken(const std::string &kind,
+                             const std::string &service) const;
+
+  private:
+    std::map<std::pair<std::string, std::string>, Token> tokens;
+    mutable std::mutex mtx;
+};
 
 class UserInfo {
 public:
@@ -74,30 +97,30 @@ public:
                && effectiveUser == other.effectiveUser;
     }
 
-    void addToken(const Token & token) {
-        tokens[std::make_pair(token.getKind(), token.getService())] = token;
-    }
+    void addToken(const Token &token) { tokens.addToken(token); }
 
     const Token * selectToken(const std::string & kind, const std::string & service) const {
-        std::map<std::pair<std::string, std::string>, Token>::const_iterator it;
-        it = tokens.find(std::make_pair(kind, service));
+        auto private_token = tokens.selectToken(kind, service);
 
-        if (it == tokens.end()) {
-            return NULL;
-        }
+        // HACK: Share tokens in default user instance
+        if (!private_token && effectiveUser == default_user.effectiveUser)
+            return default_user.tokens.selectToken(kind, service);
 
-        return &it->second;
+        return private_token;
     }
 
     size_t hash_value() const;
 
 public:
     static UserInfo LocalUser();
+    static UserInfo &DefaultUser() { return default_user; };
 
-private:
+  private:
     KerberosName effectiveUser;
-    std::map<std::pair<std::string, std::string>, Token> tokens;
+    AuthTokens tokens;
     std::string realUser;
+
+    static UserInfo default_user;
 };
 
 }

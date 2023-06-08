@@ -37,6 +37,7 @@
 #include "Token.h"
 #include "Unordered.h"
 #include "WritableUtils.h"
+#include "client/UserInfo.h"
 
 #include <algorithm>
 #include <string>
@@ -258,19 +259,26 @@ void FileSystem::connect(const char * uri, const char * username, const char * t
         if (auth == AuthMethod::KERBEROS) {
             if (username) {
                 principal = username;
-                std::cerr << "principal passed to FileSystem::connect is " << principal << std::endl;
+            } else {
+                principal = UserInfo::DefaultUser().getPrincipal();
             }
+
+            if (!principal.empty())
+                std::cerr << "principal passed to FileSystem::connect is "
+                          << principal << std::endl;
 
             // principal = ExtractPrincipalFromTicketCache(sconf.getKerberosCachePath());
             const std::string & cache_path = sconf.getKerberosCachePath();
             std::cerr << "cache_path is " << cache_path << std::endl;
 
+#if WITH_KERBEROS
             if (principal.empty()) {
                 principal = ExtractPrincipalFromTicketCache(cache_path);
                 std::cerr << "principal obtained via ExtractPrincipalFromTicketCache is " << principal << std::endl;
             } else {
                 SetKRB5CCNAME(cache_path);
             }
+#endif
         }
 
         impl = ConnectInternal(uri, principal, NULL, conf);

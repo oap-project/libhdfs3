@@ -27,6 +27,10 @@ ADD_SUBDIRECTORY(mock)
 ADD_SUBDIRECTORY(src)
 ADD_SUBDIRECTORY(test)
 
+IF(WITH_EXAMPLES)
+	ADD_SUBDIRECTORY(examples)
+ENDIF()
+
 CONFIGURE_FILE(src/libhdfs3.pc.in ${CMAKE_SOURCE_DIR}/src/libhdfs3.pc @ONLY)
 CONFIGURE_FILE(debian/changelog.in ${CMAKE_SOURCE_DIR}/debian/changelog @ONLY)
 

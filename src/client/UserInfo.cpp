@@ -27,6 +27,8 @@
  */
 #include "UserInfo.h"
 
+#include <iostream>
+#include <mutex>
 #include <pwd.h>
 #include <sys/types.h>
 #include <unistd.h>
@@ -77,5 +79,26 @@ size_t UserInfo::hash_value() const {
     return CombineHasher(values, sizeof(values) / sizeof(values[0]));
 }
 
+UserInfo UserInfo::default_user;
+
+void AuthTokens::addToken(const Token &token) {
+    std::lock_guard<std::mutex> guard(mtx);
+
+    tokens[std::make_pair(token.getKind(), token.getService())] = token;
+}
+
+const Token *AuthTokens::selectToken(const std::string &kind,
+                                     const std::string &service) const {
+    std::lock_guard<std::mutex> guard(mtx);
+
+    std::map<std::pair<std::string, std::string>, Token>::const_iterator it;
+    it = tokens.find(std::make_pair(kind, service));
+
+    if (it == tokens.end()) {
+        return NULL;
+    }
+
+    return &it->second;
+}
 }
 }
