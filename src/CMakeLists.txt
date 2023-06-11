@@ -50,6 +50,8 @@ if(CMAKE_SYSTEM_PROCESSOR MATCHES "amd64|x86_64")
     find_program(YASM_PATH NAMES yasm)
     if(NOT YASM_PATH)
         message(FATAL_ERROR "Please install the Yasm assembler to build libhdfs3")
+    else()
+        message(STATUS "Found yasm: ${YASM_PATH}")
     endif()
     add_custom_command(
         OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/crc_iscsi_v_pcl.o
