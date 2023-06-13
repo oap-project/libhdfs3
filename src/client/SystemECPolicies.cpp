@@ -22,6 +22,7 @@
 
 #include "Logger.h"
 #include "SystemECPolicies.h"
+#include <mutex>
 
 namespace Hdfs {
 
